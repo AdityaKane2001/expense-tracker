@@ -15,18 +15,17 @@ export async function addExpense(formData: FormData) {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
   const rawDate = formData.get('date') as string;
 
+  // Manual split to avoid timezone shifts
   const [year, month, day] = rawDate.split('-').map(Number);
-  const dateObj = new Date(year, month - 1, day);
-
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  
   // 1. Format for the Cell: "Feb 22"
-  const cellDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const cellDate = `${monthNames[month - 1]} ${day}`;
 
-  // 2. Format for the Sheet Name: "Feb2026" (Concatenated)
-  const monthName = dateObj.toLocaleDateString('en-US', { month: 'short' });
-  const sheetName = `${monthName}${year}`; 
+  // 2. Format for the Sheet Name: "Feb2026"
+  const sheetName = `${monthNames[month - 1]}${year}`; 
 
   try {
-    // 3. CHECK IF SHEET EXISTS / CREATE IF MISSING
     const doc = await sheets.spreadsheets.get({ spreadsheetId });
     const sheetExists = doc.data.sheets?.some(s => s.properties?.title === sheetName);
 
@@ -37,7 +36,7 @@ export async function addExpense(formData: FormData) {
           requests: [{ addSheet: { properties: { title: sheetName } } }],
         },
       });
-      // Optional: Add headers to the new sheet
+      
       await sheets.spreadsheets.values.update({
         spreadsheetId,
         range: `${sheetName}!A1:D1`,
@@ -46,7 +45,6 @@ export async function addExpense(formData: FormData) {
       });
     }
 
-    // 4. APPEND THE DATA
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: `${sheetName}!A:D`,
@@ -62,6 +60,7 @@ export async function addExpense(formData: FormData) {
     });
 
     revalidatePath('/');
+    // We return this for our own logic, but handleAction in page.tsx will "hide" it from the form
     return { success: true };
   } catch (error: any) {
     console.error('Error:', error);
