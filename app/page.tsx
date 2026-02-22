@@ -65,19 +65,21 @@ export default function Home() {
 
           <div className="flex flex-col gap-2">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Amount</label>
-            <div className="relative">
-              <span className="absolute left-0 top-2 text-3xl font-bold text-gray-400">$</span>
-              <input
-                name="cost"
-                type="tel"
-                inputMode="decimal"
-                placeholder="0.00"
-                className="your-styles-here"
-                required
+            <div className="flex items-center gap-1 border-b-2 border-gray-100 focus-within:border-blue-500 transition-all pb-1">
+              {/* Dollar sign stays fixed and large */}
+              <span className="text-4xl font-black text-black select-none">$</span>
+              
+              <input 
+                name="cost" 
+                type="text" 
+                inputMode="decimal" 
+                placeholder="0.00" 
+                // Changed to text-black and 4xl to ensure it's huge and dark
+                className="w-full text-4xl font-black text-black outline-none bg-transparent placeholder:text-gray-200" 
+                required 
               />
             </div>
           </div>
-
           <button type="submit" className="mt-6 bg-black text-white p-5 rounded-2xl font-bold text-xl shadow-lg active:scale-[0.98] hover:bg-gray-800 transition-all">
             Save Expense
           </button>
