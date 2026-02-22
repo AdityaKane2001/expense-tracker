@@ -35,11 +35,8 @@ export default function Page() {
     
     if (result?.success) {
       setMessage('✅ Saved to Google Sheets!')
-      formRef.current?.reset() // Clears the form for the next entry
-      // Reset the date back to today after clearing
+      formRef.current?.reset() 
       setSelectedDate(new Date().toISOString().split('T')[0]) 
-      
-      // Hide the message after 3 seconds
       setTimeout(() => setMessage(''), 3000)
     } else {
       setMessage('❌ Error: ' + (result?.error || 'Unknown error'))
@@ -56,13 +53,6 @@ export default function Page() {
       </header>
       
       <form ref={formRef} action={handleAction} className="flex flex-col gap-6">
-        {/* Success/Error Message */}
-        {message && (
-          <div className={`p-4 rounded-xl font-bold text-center animate-bounce ${message.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-            {message}
-          </div>
-        )}
-
         {/* 1. DATE */}
         <div className="flex flex-col gap-2">
           <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Date</label>
@@ -96,8 +86,17 @@ export default function Page() {
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 flex flex-col gap-4">
           <SubmitButton />
+          
+          {/* SUCCESS MESSAGE BELOW BUTTON */}
+          <div className="h-12"> {/* Fixed height container to prevent layout shift */}
+            {message && (
+              <div className={`p-3 rounded-xl font-bold text-center transition-opacity duration-300 ${message.includes('✅') ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'}`}>
+                {message}
+              </div>
+            )}
+          </div>
         </div>
       </form>
     </main>
