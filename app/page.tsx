@@ -27,6 +27,12 @@ function SubmitButton() {
 
 // 2. The Full Page Component
 export default function Page() {
+
+  async function handleAction(formData: FormData) {
+    await addExpense(formData);
+    // This function returns nothing (void), which makes the form happy
+  }
+
   return (
     <main className="max-w-md mx-auto p-6 bg-white min-h-screen">
       <header className="mb-10">
@@ -34,7 +40,7 @@ export default function Page() {
         <p className="text-gray-400 font-medium">Log your spending instantly.</p>
       </header>
       
-      <form action={addExpense} className="flex flex-col gap-8">
+      <form action={handleAction} className="flex flex-col gap-8">
         
         {/* AMOUNT SECTION */}
         <div className="flex flex-col gap-2">
