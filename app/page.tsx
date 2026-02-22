@@ -69,7 +69,7 @@ export default function Home() {
               <span className="absolute left-0 top-2 text-3xl font-bold text-gray-400">$</span>
               <input
                 name="cost"
-                type="text"
+                type="tel"
                 inputMode="decimal"
                 placeholder="0.00"
                 className="your-styles-here"
