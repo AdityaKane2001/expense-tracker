@@ -67,14 +67,13 @@ export default function Home() {
             <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Amount</label>
             <div className="relative">
               <span className="absolute left-0 top-2 text-3xl font-bold text-gray-400">$</span>
-              <input 
-                name="cost" 
-                type="text"           // Change this to text!
-                inputMode="decimal"    // Forces the large number pad
-                pattern="[0-9]*"       // Helps older browsers/devices
-                placeholder="0.00" 
-                className="pl-6 w-full text-4xl font-black border-b-2 border-gray-100 p-2 text-black focus:border-blue-500 outline-none transition bg-transparent" 
-                required 
+              <input
+                name="cost"
+                type="text"
+                inputMode="decimal"
+                placeholder="0.00"
+                className="your-styles-here"
+                required
               />
             </div>
           </div>
