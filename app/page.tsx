@@ -31,15 +31,28 @@ export default function Page() {
   }
 
   async function handleAction(formData: FormData) {
-    const result = await addExpense(formData)
+    const costValue = formData.get('cost') as string;
+  
+    // Basic float validation (allows numbers and one optional decimal point)
+    const isValidFloat = /^[0-9]*\.?[0-9]+$/.test(costValue);
+  
+    if (!isValidFloat) {
+      setMessage('❌ Error: Please enter a valid amount');
+      // Clear error after 3 seconds
+      setTimeout(() => setMessage(''), 3000);
+      return; // Stop the function here
+    }
+  
+    // If valid, proceed to the server action
+    const result = await addExpense(formData);
     
     if (result?.success) {
-      setMessage('✅ Saved to Google Sheets!')
-      formRef.current?.reset() 
-      setSelectedDate(new Date().toISOString().split('T')[0]) 
-      setTimeout(() => setMessage(''), 3000)
+      setMessage('✅ Saved to Google Sheets!');
+      formRef.current?.reset(); 
+      setSelectedDate(new Date().toISOString().split('T')[0]); 
+      setTimeout(() => setMessage(''), 3000);
     } else {
-      setMessage('❌ Error: ' + (result?.error || 'Unknown error'))
+      setMessage('❌ Error: ' + (result?.error || 'Unknown error'));
     }
   }
 

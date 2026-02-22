@@ -54,7 +54,7 @@ export async function addExpense(formData: FormData) {
           cellDate,
           formData.get('group'),
           formData.get('item'),
-          formData.get('cost')
+          Number(formData.get('cost'))
         ]],
       },
     });
