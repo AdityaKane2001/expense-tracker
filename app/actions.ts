@@ -20,7 +20,7 @@ export async function addExpense(formData: FormData) {
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   
   // 1. Format for the Cell: "Feb 22"
-  const cellDate = `'${monthNames[month - 1]} ${day}`;
+  const cellDate = `${monthNames[month - 1]} ${day}`;
 
   // 2. Format for the Sheet Name: "Feb2026"
   const sheetName = `${monthNames[month - 1]}${year}`; 
