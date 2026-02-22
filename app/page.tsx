@@ -1,96 +1,93 @@
 'use client'
-import { addExpense } from './actions';
-import { useState } from 'react';
 
-export default function Home() {
-  const [status, setStatus] = useState<string>('');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+import { useFormStatus } from 'react-dom'
+import { addExpense } from './actions'
 
-  // Logic to show exactly which tab the app is targeting
-  const getTargetSheet = (dateString: string) => {
-    const [y, m, d] = dateString.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d);
-    const month = dateObj.toLocaleDateString('en-US', { month: 'short' });
-    return `${month}${y}`;
-  };
-
-  async function clientAction(formData: FormData) {
-    setStatus('🚀 Sending to ' + getTargetSheet(selectedDate) + '...');
-    const result = await addExpense(formData);
-    if (result.success) {
-      setStatus('✅ Added to ' + getTargetSheet(selectedDate));
-      // Reset only the item and cost so you can log another for the same day/group
-      const form = document.querySelector('form') as HTMLFormElement;
-      form.reset();
-    } else {
-      setStatus('❌ Error: ' + result.error);
-    }
-  }
+// 1. The Spinning Button Component
+function SubmitButton() {
+  const { pending } = useFormStatus()
 
   return (
-    <main className="max-w-md mx-auto p-6 pt-12 font-sans bg-gray-50 min-h-screen">
-      <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-        <header className="mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Log Expense</h1>
-          <p className="text-sm text-blue-600 font-medium">Targeting: {getTargetSheet(selectedDate)}</p>
-        </header>
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl text-lg shadow-lg active:scale-95 transition-all disabled:bg-gray-400 flex items-center justify-center gap-3"
+    >
+      {pending ? (
+        <>
+          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          <span>Saving...</span>
+        </>
+      ) : (
+        "Save Expense"
+      )}
+    </button>
+  )
+}
+
+// 2. The Full Page Component
+export default function Page() {
+  return (
+    <main className="max-w-md mx-auto p-6 bg-white min-h-screen">
+      <header className="mb-10">
+        <h1 className="text-3xl font-black text-black tracking-tight">New Expense</h1>
+        <p className="text-gray-400 font-medium">Log your spending instantly.</p>
+      </header>
+      
+      <form action={addExpense} className="flex flex-col gap-8">
         
-        <form action={clientAction} className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Date</label>
+        {/* AMOUNT SECTION */}
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Amount</label>
+          <div className="flex items-center gap-1 border-b-2 border-gray-100 focus-within:border-blue-500 transition-all pb-1">
+            <span className="text-4xl font-black text-black select-none">$</span>
             <input 
-              name="date" 
-              type="date" 
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="border-b-2 border-gray-100 p-2 text-lg text-black focus:border-blue-500 outline-none transition bg-transparent" 
+              name="cost" 
+              type="text" 
+              inputMode="decimal" 
+              placeholder="0.00" 
+              className="w-full text-4xl font-black text-black outline-none bg-transparent placeholder:text-gray-200" 
+              required 
             />
           </div>
+        </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Category</label>
-            <select name="group" className="bg-gray-50 p-4 rounded-2xl text-black outline-none border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 appearance-none">
-              <option>Food</option>
-              <option>Groceries</option>
-              <option>Transport</option>
-              <option>Restaurants</option>
-              <option>Recurring</option>
-              <option>Other</option>
-            </select>
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Item Description</label>
-            <input name="item" placeholder="What was it?" className="border-b-2 border-gray-100 p-2 text-lg text-black focus:border-blue-500 outline-none transition bg-transparent" required />
-          </div>
+        {/* CATEGORY SECTION */}
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Category</label>
+          <select 
+            name="group" 
+            className="w-full bg-gray-50 p-4 rounded-2xl text-black font-semibold outline-none border-none ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500 appearance-none"
+            required
+          >
+            <option>Food</option>
+            <option>Groceries</option>
+            <option>Transport</option>
+            <option>Restaurants</option>
+            <option>Other</option>
+          </select>
+        </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Amount</label>
-            <div className="flex items-center gap-1 border-b-2 border-gray-100 focus-within:border-blue-500 transition-all pb-1">
-              {/* Dollar sign stays fixed and large */}
-              <span className="text-4xl font-black text-black select-none">$</span>
-              
-              <input 
-                name="cost" 
-                type="text" 
-                inputMode="decimal" 
-                placeholder="0.00" 
-                // Changed to text-black and 4xl to ensure it's huge and dark
-                className="w-full text-4xl font-black text-black outline-none bg-transparent placeholder:text-gray-200" 
-                required 
-              />
-            </div>
-          </div>
-          <button type="submit" className="mt-6 bg-black text-white p-5 rounded-2xl font-bold text-xl shadow-lg active:scale-[0.98] hover:bg-gray-800 transition-all">
-            Save Expense
-          </button>
-          
-          {status && (
-            <div className="mt-4 p-3 rounded-xl bg-blue-50 text-blue-700 text-center text-sm font-semibold animate-in fade-in slide-in-from-bottom-2">
-              {status}
-            </div>
-          )}
-        </form>
-      </div>
+        {/* DESCRIPTION SECTION */}
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Description</label>
+          <input 
+            name="item" 
+            type="text" 
+            placeholder="What did you buy?" 
+            className="w-full bg-gray-50 p-4 rounded-2xl text-black font-semibold outline-none border-none ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500"
+            required 
+          />
+        </div>
+
+        {/* DATE SECTION (Hidden, defaults to today) */}
+        <input type="hidden" name="date" value={new Date().toISOString().split('T')[0]} />
+
+        {/* THE SPINNING BUTTON */}
+        <div className="mt-4">
+          <SubmitButton />
+        </div>
+      </form>
     </main>
-  );
+  )
 }
