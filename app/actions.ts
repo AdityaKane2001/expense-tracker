@@ -1,8 +1,10 @@
 'use server'
+
 import { google } from 'googleapis';
 import { revalidatePath } from 'next/cache';
 
-export async function addExpense(formData: FormData) {
+// Reusable auth setup
+const getSheetsClient = () => {
   const auth = new google.auth.GoogleAuth({
     credentials: {
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -10,19 +12,47 @@ export async function addExpense(formData: FormData) {
     },
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
+  return google.sheets({ version: 'v4', auth });
+}
 
-  const sheets = google.sheets({ version: 'v4', auth });
+// 1. FETCH RECENT EXPENSES
+export async function getRecentExpenses(dateString: string) {
+  try {
+    const sheets = getSheetsClient();
+    const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
+    
+    // Parse the requested date to find the correct sheet
+    const [year, month] = dateString.split('-').map(Number);
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const sheetName = `${monthNames[month - 1]}${year}`;
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${sheetName}!A:D`,
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length <= 1) return []; // Ignore headers
+
+    // Grab the last 5 entries and reverse them (newest first)
+    return rows.slice(1).slice(-5).reverse();
+  } catch (error) {
+    // If the sheet doesn't exist yet (e.g., first day of a new month), return empty
+    return [];
+  }
+}
+
+// 2. ADD NEW EXPENSE
+export async function addExpense(formData: FormData) {
+  const sheets = getSheetsClient();
   const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
   const rawDate = formData.get('date') as string;
 
-  // Manual split to avoid timezone shifts
   const [year, month, day] = rawDate.split('-').map(Number);
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   
-  // 1. Format for the Cell: "Feb 22"
-  const cellDate = `${monthNames[month - 1]} ${day}`;
-
-  // 2. Format for the Sheet Name: "Feb2026"
+  // The Apostrophe forces Sheets to treat it as a string ("Feb 22")
+  const cellDate = `'${monthNames[month - 1]} ${day}`;
   const sheetName = `${monthNames[month - 1]}${year}`; 
 
   try {
@@ -30,13 +60,11 @@ export async function addExpense(formData: FormData) {
     const sheetExists = doc.data.sheets?.some(s => s.properties?.title === sheetName);
 
     if (!sheetExists) {
+      // Create new sheet and add headers if it's a new month
       await sheets.spreadsheets.batchUpdate({
         spreadsheetId,
-        requestBody: {
-          requests: [{ addSheet: { properties: { title: sheetName } } }],
-        },
+        requestBody: { requests: [{ addSheet: { properties: { title: sheetName } } }] },
       });
-      
       await sheets.spreadsheets.values.update({
         spreadsheetId,
         range: `${sheetName}!A1:D1`,
@@ -45,6 +73,7 @@ export async function addExpense(formData: FormData) {
       });
     }
 
+    // Append the actual row
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: `${sheetName}!A:D`,
@@ -54,13 +83,12 @@ export async function addExpense(formData: FormData) {
           cellDate,
           formData.get('group'),
           formData.get('item'),
-          Number(formData.get('cost'))
+          Number(formData.get('cost')) // Ensure it logs as a number
         ]],
       },
     });
 
     revalidatePath('/');
-    // We return this for our own logic, but handleAction in page.tsx will "hide" it from the form
     return { success: true };
   } catch (error: any) {
     console.error('Error:', error);
