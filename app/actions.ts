@@ -3,7 +3,7 @@
 import { google } from 'googleapis';
 import { revalidatePath } from 'next/cache';
 
-// Reusable auth setup
+// --- SHARED AUTHENTICATION HELPER ---
 const getSheetsClient = () => {
   const auth = new google.auth.GoogleAuth({
     credentials: {
@@ -15,7 +15,7 @@ const getSheetsClient = () => {
   return google.sheets({ version: 'v4', auth });
 }
 
-// 1. FETCH RECENT EXPENSES
+// --- 1. FETCH RECENT EXPENSES ---
 export async function getRecentExpenses(dateString: string) {
   try {
     const sheets = getSheetsClient();
@@ -37,12 +37,12 @@ export async function getRecentExpenses(dateString: string) {
     // Grab the last 5 entries and reverse them (newest first)
     return rows.slice(1).slice(-5).reverse();
   } catch (error) {
-    // If the sheet doesn't exist yet (e.g., first day of a new month), return empty
+    // If the sheet doesn't exist yet (e.g., first day of a new month), return empty array
     return [];
   }
 }
 
-// 2. ADD NEW EXPENSE
+// --- 2. ADD NEW EXPENSE ---
 export async function addExpense(formData: FormData) {
   const sheets = getSheetsClient();
   const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
@@ -51,27 +51,40 @@ export async function addExpense(formData: FormData) {
   const [year, month, day] = rawDate.split('-').map(Number);
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   
-  // 1. REMOVE THE APOSTROPHE HERE
-  const cellDate = `${monthNames[month - 1]} ${day}`;
+  // Use a Google Sheets formula to force it to display "Feb 22" without the apostrophe
+  const cellDate = `=TEXT(DATE(${year}, ${month}, ${day}), "mmm dd")`;
   const sheetName = `${monthNames[month - 1]}${year}`; 
 
   try {
     const doc = await sheets.spreadsheets.get({ spreadsheetId });
     const sheetExists = doc.data.sheets?.some(s => s.properties?.title === sheetName);
 
-    // ... (sheet creation logic stays the same) ...
+    if (!sheetExists) {
+      // Create new sheet and add headers if it's a new month
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: { requests: [{ addSheet: { properties: { title: sheetName } } }] },
+      });
+      
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${sheetName}!A1:D1`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [['Date', 'Category', 'Item', 'Cost']] },
+      });
+    }
 
-    // 2. CHANGE TO 'RAW' HERE
+    // Append the actual row
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: `${sheetName}!A:D`,
-      valueInputOption: 'RAW', // <-- Changed from USER_ENTERED
+      valueInputOption: 'USER_ENTERED', // USER_ENTERED allows the TEXT() formula to calculate
       requestBody: {
         values: [[
           cellDate,
           formData.get('group'),
           formData.get('item'),
-          Number(formData.get('cost')) // RAW mode will keep this as a true number!
+          Number(formData.get('cost')) // Number() ensures prices are math-ready
         ]],
       },
     });
