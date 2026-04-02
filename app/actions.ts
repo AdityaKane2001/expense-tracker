@@ -52,7 +52,7 @@ export async function addExpense(formData: FormData) {
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   
   // The Apostrophe forces Sheets to treat it as a string ("Feb 22")
-  const cellDate = `'${monthNames[month - 1]} ${day}`;
+  const cellDate = `${monthNames[month - 1]} ${day}`;
   const sheetName = `${monthNames[month - 1]}${year}`; 
 
   try {
