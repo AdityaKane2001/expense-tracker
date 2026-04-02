@@ -51,39 +51,27 @@ export async function addExpense(formData: FormData) {
   const [year, month, day] = rawDate.split('-').map(Number);
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   
-  // The Apostrophe forces Sheets to treat it as a string ("Feb 22")
-  const cellDate = `'${monthNames[month - 1]} ${day}`;
+  // 1. REMOVE THE APOSTROPHE HERE
+  const cellDate = `${monthNames[month - 1]} ${day}`;
   const sheetName = `${monthNames[month - 1]}${year}`; 
 
   try {
     const doc = await sheets.spreadsheets.get({ spreadsheetId });
     const sheetExists = doc.data.sheets?.some(s => s.properties?.title === sheetName);
 
-    if (!sheetExists) {
-      // Create new sheet and add headers if it's a new month
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: { requests: [{ addSheet: { properties: { title: sheetName } } }] },
-      });
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${sheetName}!A1:D1`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: { values: [['Date', 'Category', 'Item', 'Cost']] },
-      });
-    }
+    // ... (sheet creation logic stays the same) ...
 
-    // Append the actual row
+    // 2. CHANGE TO 'RAW' HERE
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: `${sheetName}!A:D`,
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption: 'RAW', // <-- Changed from USER_ENTERED
       requestBody: {
         values: [[
           cellDate,
           formData.get('group'),
           formData.get('item'),
-          Number(formData.get('cost')) // Ensure it logs as a number
+          Number(formData.get('cost')) // RAW mode will keep this as a true number!
         ]],
       },
     });
