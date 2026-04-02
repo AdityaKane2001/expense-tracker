@@ -9,7 +9,7 @@ const PRESETS = [
   { label: 'Whole Foods', category: 'Groceries', item: 'Whole Foods' },
   { label: 'Cava', category: 'Food', item: 'Cava' },
   { label: 'Coffee', category: 'Food', item: 'Coffee' },
-  { label: 'Uber', category: 'Transport', item: 'Uber' },
+  { label: 'Lyft', category: 'Transport', item: 'Lyft' },
 ]
 
 function SubmitButton() {
