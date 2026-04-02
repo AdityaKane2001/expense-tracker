@@ -1,98 +1,38 @@
-'use server'
+"use server";
 
-import { google } from 'googleapis';
-import { revalidatePath } from 'next/cache';
+import { google } from "googleapis";
 
-// --- SHARED AUTHENTICATION HELPER ---
-const getSheetsClient = () => {
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    },
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  });
-  return google.sheets({ version: 'v4', auth });
-}
+export async function addExpense(formData: FormData) {
+  const date = formData.get("date") as string; // e.g., "2026-04-01"
+  const category = formData.get("category") as string;
+  const amount = formData.get("amount") as string;
+  const item = formData.get("item") as string;
 
-// --- 1. FETCH RECENT EXPENSES ---
-export async function getRecentExpenses(dateString: string) {
   try {
-    const sheets = getSheetsClient();
-    const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
-    
-    // Parse the requested date to find the correct sheet
-    const [year, month] = dateString.split('-').map(Number);
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const sheetName = `${monthNames[month - 1]}${year}`;
-
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: `${sheetName}!A:D`,
+    const auth = new google.auth.GoogleAuth({
+      credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY!),
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
 
-    const rows = response.data.values || [];
-    if (rows.length <= 1) return []; // Ignore headers
+    const sheets = google.sheets({ version: "v4", auth });
 
-    // Grab the last 5 entries and reverse them (newest first)
-    return rows.slice(1).slice(-5).reverse();
-  } catch (error) {
-    // If the sheet doesn't exist yet (e.g., first day of a new month), return empty array
-    return [];
-  }
-}
+    // Formatting the date to MM/DD/YYYY if it's coming from a standard HTML date input (YYYY-MM-DD)
+    const [year, month, day] = date.split("-");
+    const formattedDate = `${parseInt(month)}/${parseInt(day)}/${year}`;
 
-// --- 2. ADD NEW EXPENSE ---
-export async function addExpense(formData: FormData) {
-  const sheets = getSheetsClient();
-  const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
-  const rawDate = formData.get('date') as string;
-
-  const [year, month, day] = rawDate.split('-').map(Number);
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  
-  // Use a Google Sheets formula to force it to display "Feb 22" without the apostrophe
-  const cellDate = `=TEXT(DATE(${year}, ${month}, ${day}), "mmm dd")`;
-  const sheetName = `${monthNames[month - 1]}${year}`; 
-
-  try {
-    const doc = await sheets.spreadsheets.get({ spreadsheetId });
-    const sheetExists = doc.data.sheets?.some(s => s.properties?.title === sheetName);
-
-    if (!sheetExists) {
-      // Create new sheet and add headers if it's a new month
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: { requests: [{ addSheet: { properties: { title: sheetName } } }] },
-      });
-      
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${sheetName}!A1:D1`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: { values: [['Date', 'Category', 'Item', 'Cost']] },
-      });
-    }
-
-    // Append the actual row
     await sheets.spreadsheets.values.append({
-      spreadsheetId,
-      range: `${sheetName}!A:D`,
-      valueInputOption: 'USER_ENTERED', // USER_ENTERED allows the TEXT() formula to calculate
+      spreadsheetId: process.env.SPREADSHEET_ID,
+      range: "Sheet1!A:E",
+      // CRITICAL: This must be 'USER_ENTERED' to avoid the apostrophe
+      valueInputOption: "USER_ENTERED", 
       requestBody: {
-        values: [[
-          cellDate,
-          formData.get('group'),
-          formData.get('item'),
-          Number(formData.get('cost')) // Number() ensures prices are math-ready
-        ]],
+        values: [[formattedDate, category, amount, item]],
       },
     });
 
-    revalidatePath('/');
     return { success: true };
-  } catch (error: any) {
-    console.error('Error:', error);
-    return { success: false, error: error.message };
+  } catch (error) {
+    console.error("Error adding expense:", error);
+    return { success: false };
   }
 }
