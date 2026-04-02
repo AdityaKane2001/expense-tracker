@@ -7,8 +7,9 @@ import { addExpense, getRecentExpenses } from './actions'
 // --- PRESETS CONFIGURATION ---
 const PRESETS = [
   { label: 'Whole Foods', category: 'Groceries', item: 'Whole Foods' },
-  { label: 'Cava', category: 'Food', item: 'Cava' },
   { label: 'Coffee', category: 'Food', item: 'Coffee' },
+  { label: 'Cava', category: 'Food', item: 'Cava' },
+  { label: 'Amazon', category: 'Other', item: 'Amazon' },
   { label: 'Lyft', category: 'Transport', item: 'Lyft' },
 ]
 
