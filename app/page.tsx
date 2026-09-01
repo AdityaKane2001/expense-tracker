@@ -7,9 +7,13 @@ import { addExpense, getRecentExpenses } from './actions'
 // --- PRESETS CONFIGURATION ---
 const PRESETS = [
   { label: 'Whole Foods', category: 'Groceries', item: 'Whole Foods' },
-  { label: 'Coffee', category: 'Food', item: 'Coffee' },
+  { label: 'Instacart', category: 'Groceries', item: 'Instacart' },
   { label: 'Cava', category: 'Food', item: 'Cava' },
+  { label: 'Tindrum', category: 'Food', item: 'Cava' },
+  { label: 'Atwoods', category: 'Food', item: 'Cava' },
+  { label: 'Chips', category: 'Food', item: 'Cava' },
   { label: 'Amazon', category: 'Other', item: 'Amazon' },
+  { label: 'Coffee', category: 'Food', item: 'Coffee' },
   { label: 'Lyft', category: 'Transport', item: 'Lyft' },
 ]
 
