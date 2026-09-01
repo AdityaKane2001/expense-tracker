@@ -5,12 +5,14 @@ import { useFormStatus } from 'react-dom'
 import { addExpense, getRecentExpenses } from './actions'
 
 // --- PRESETS CONFIGURATION ---
-const PRESETS = [
+const PRESETS1 = [
   { label: 'Whole Foods', category: 'Groceries', item: 'Whole Foods' },
   { label: 'Instacart', category: 'Groceries', item: 'Instacart' },
   { label: 'Cava', category: 'Food', item: 'Cava' },
   { label: 'Tindrum', category: 'Food', item: 'Cava' },
   { label: 'Atwoods', category: 'Food', item: 'Cava' },
+]
+const PRESETS2 = [
   { label: 'Chips', category: 'Food', item: 'Cava' },
   { label: 'Amazon', category: 'Other', item: 'Amazon' },
   { label: 'Coffee', category: 'Food', item: 'Coffee' },
@@ -126,7 +128,19 @@ export default function Page() {
             <label className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest block mb-2">Quick Presets</label>
             {/* overflow-x-auto allows scrolling if you add a lot of presets! */}
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {PRESETS.map((preset, idx) => (
+              {PRESETS1.map((preset, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handlePresetClick(preset.category, preset.item)}
+                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition-transform active:scale-95 ${getPresetColor(preset.category)}`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {PRESETS2.map((preset, idx) => (
                 <button
                   key={idx}
                   type="button"
